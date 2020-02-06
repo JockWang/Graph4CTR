@@ -5,11 +5,13 @@ import argparse
 import numpy as np
 import logging
 
+
 def process(dataset='book'):
     RATING_FILE_NAME = dict({'movie': 'ratings.dat', 'book': 'BX-Book-Ratings.csv', 'news': 'ratings.txt'})
     SEP = dict({'movie': '::', 'book': ';', 'news': '\t'})
     THRESHOLD = dict({'movie': 4, 'book': 0, 'news': 0})
-    BASEPATH = 'data/'
+    BASEPATH = '/content/drive/My Drive/Colab Notebooks/Graph4CTR/data/'
+
     def read_item_index_to_entity_id_file():
         file = BASEPATH + DATASET + '/item_index2entity_id_rehashed.txt'
         logging.info('reading item index to entity id file: ' + file + ' ...')
@@ -73,6 +75,7 @@ def process(dataset='book'):
         writer.close()
         logging.info('number of users: %d' % user_cnt)
         logging.info('number of items: %d' % len(item_set))
+        return user_cnt, len(item_set)
 
     def convert_kg():
         logging.info('converting kg file ...')
@@ -115,6 +118,7 @@ def process(dataset='book'):
         writer.close()
         logging.info('number of entities (containing items): %d' % entity_cnt)
         logging.info('number of relations: %d' % relation_cnt)
+        return entity_cnt
 
     np.random.seed(555)
     DATASET = dataset
@@ -123,6 +127,7 @@ def process(dataset='book'):
     item_index_old2new = dict()
 
     read_item_index_to_entity_id_file()
-    convert_rating()
-    convert_kg()
+    user, item = convert_rating()
+    all_ = convert_kg()
     logging.info('done')
+    return user, item, all_

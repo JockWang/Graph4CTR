@@ -8,7 +8,7 @@ import logging
 from torch_geometric.data import Data
 
 def getGraph(number, dataset='book'):
-    df = pd.read_csv('data/'+dataset+'/kg_final.txt', sep='\t', header=None, index_col=None)
+    df = pd.read_csv('/content/drive/My Drive/Colab Notebooks/Graph4CTR/data/'+dataset+'/kg_final.txt', sep='\t', header=None, index_col=None)
     logging.info('Generating subgraph...')
     head_index, tail_index = [], []
     for value in df.values:
