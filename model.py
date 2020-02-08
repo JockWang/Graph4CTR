@@ -7,11 +7,11 @@ from torch_geometric.nn import GCNConv, GATConv
 from layers import HGCN
 import torch
 import logging
-from sklearn.metrics import roc_auc_score, f1_score
+from sklearn.metrics import roc_auc_score, f1_score, accuracy_score
 
 
 class Model(nn.Module):
-    def __init__(self, u_hidden_size, i_hidden_size, number, i_hidden_list, hidden_list,
+    def __init__(self, u_hidden_size, i_hidden_size, number, i_hidden_list, hidden_list, args,
                  heads=6, dataset='book', mode='GAT'):
         super(Model, self).__init__()
         self.u_hidden_size, self.i_hidden_size = u_hidden_size, i_hidden_size
@@ -26,8 +26,8 @@ class Model(nn.Module):
         elif mode == 'GAT':
             self.convs = nn.ModuleList([GATConv(i_hidden_list[i - 1], i_hidden_list[i], heads=heads, concat=False)
                                         for i in range(1, len(i_hidden_list))])
-        elif mode == 'GCN':
-            self.convs = nn.ModuleList([HGCN(i_hidden_list[i - 1], i_hidden_list[i])
+        elif mode == 'HGCN':
+            self.convs = nn.ModuleList([HGCN(i_hidden_list[i - 1], i_hidden_list[i], c_in=args.c_in, c_out=args.c_out)
                                         for i in range(1, len(i_hidden_list))])
         hidden_list = [i_hidden_list[-1] + u_hidden_size] + hidden_list
         self.liners = nn.ModuleList([nn.Linear(hidden_list[i - 1], hidden_list[i])
@@ -56,7 +56,7 @@ class Model(nn.Module):
         return self.final(out)
 
 
-def evaluate(model, data, graph, metrics, device='cup'):
+def evaluate(model, data, graph, metrics, device='cpu'):
     y, y_ = [], []
     for k, [user, item, label] in enumerate(data['test']):
         u, i, l = user.to(device), item.to(device), label
@@ -71,6 +71,9 @@ def evaluate(model, data, graph, metrics, device='cup'):
         if metric == 'f1':
             temp = [0 if i < 0.5 else 1 for i in y_]
             line += (metric + ': %.6f ' % f1_score(y, temp))
+        if metric == 'acc':
+            temp = [0 if i < 0.5 else 1 for i in y_]
+            line += (metric + ': %.6f ' % accuracy_score(y, temp))
     logging.info(line)
 
 

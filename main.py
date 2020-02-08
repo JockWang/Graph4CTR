@@ -24,7 +24,11 @@ def main(args):
     mode = args.mode
     hidden_size = args.hidden
     batch_size = args.batch
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    if args.gpu:
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    else:
+        device = torch.device('cpu')
+    logging.info('Use '+str(device)+'.')
     logging.info('data processing...')
     user, item, all_ = process(dataset=dataset)
     number = {
@@ -44,11 +48,11 @@ def main(args):
     i_hidden_list = [16, 4]
     hidden_list = [1,]
     model = Model(u_hidden_size=hidden_size, i_hidden_size=hidden_size, number=number,
-                  i_hidden_list=i_hidden_list, hidden_list=hidden_list, heads=6,
+                  i_hidden_list=i_hidden_list, hidden_list=hidden_list, args=args, heads=6,
                   dataset=dataset, mode=mode)
-    metrics = ['auc', 'f1']
+    metrics = ['auc', 'f1','acc']
     logging.info('training...')
-    train(model=model, data=data, metrics=metrics, graph=graph, epochs=30,
+    train(model=model, data=data, metrics=metrics, graph=graph, epochs=args.epoch,
           learning_rate=args.learning_rate, weight_decay=args.weight_decay, device=device)
 
 
@@ -56,10 +60,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', type=str, default='book', help='choose a dataset: book, movie, or others.')
     parser.add_argument('--mode', type=str, default='GAT', help='choose an algorithm of GNN: GCN, GAT, or other.')
+    parser.add_argument('--epoch', type=int, default=30, help='the epoch size.')
     parser.add_argument('--batch', type=int, default=64, help='the batch size.')
     parser.add_argument('--hidden', type=int, default=4, help='the embedding size of user and item.')
     parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate.')
     parser.add_argument('--weight_decay', type=float, default=0., help='L2 regularization.')
+    parser.add_argument('--gpu', type=bool, default=True, help='use gpu.')
+    parser.add_argument('--c_in', type=float, default=1., help='C_in.')
+    parser.add_argument('--c_out', type=float, default=1., help='C_out.')
     parser.print_help()
 
     args = parser.parse_args()
