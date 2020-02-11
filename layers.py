@@ -3,12 +3,46 @@
 # @Author: jockwang, jockmail@126.com
 import torch
 import torch.nn as nn
+import torch.nn.init as init
+import math
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.nn.inits import glorot, zeros
 import torch.nn.functional as F
 from torch_geometric.utils import remove_self_loops, add_self_loops, softmax
 from utils import PoincareBall
 
+class HNN(nn.Module):
+    def __init__(self, in_features, out_features, c, dropout=0, act=F.relu, use_bias=False):
+        super(HNN, self).__init__()
+        self.manifold = PoincareBall()
+        self.c = nn.Parameter(torch.Tensor([c]))
+        self.in_channels = in_features
+        self.out_channels = out_features
+        self.dropout = dropout
+        self.act = act
+        self.use_bias = use_bias
+
+        self.bias = torch.nn.Parameter(torch.Tensor(self.out_channels))
+        self.weight = torch.nn.Parameter(torch.Tensor(self.out_channels, self.in_channels))
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        # 初始化weight、bias
+        init.xavier_uniform_(self.weight, gain=math.sqrt(2))
+        init.constant_(self.bias, 0)
+
+    def forward(self, x):
+        mv = self.manifold.mobius_matvec(self.weight, x, self.c)
+        x = self.manifold.proj(mv, self.c)
+        if self.use_bias:
+            bias = self.manifold.proj_tan0(self.bias, self.c)
+            hyp_bias = self.manifold.expmap0(bias, self.c)
+            hyp_bias = self.manifold.proj(hyp_bias, self.c)
+            x = self.manifold.mobius_add(x, hyp_bias, c=self.c)
+            x = self.manifold.proj(x, self.c)
+        xt = self.act(self.manifold.logmap0(x, c=self.c))
+        xt = self.manifold.proj_tan0(xt, c=self.c)
+        return self.manifold.proj(self.manifold.expmap0(xt, c=self.c), c=self.c)
 
 class HGCN(MessagePassing):
     def __init__(self, in_channels, out_channels, c_in=1., c_out=1.):

@@ -6,11 +6,11 @@ import numpy as np
 import logging
 
 
-def process(dataset='book'):
+def process(dataset='book',bathpath='data'):
     RATING_FILE_NAME = dict({'movie': 'ratings.dat', 'book': 'BX-Book-Ratings.csv', 'news': 'ratings.txt'})
     SEP = dict({'movie': '::', 'book': ';', 'news': '\t'})
     THRESHOLD = dict({'movie': 4, 'book': 0, 'news': 0})
-    BASEPATH = '/content/drive/My Drive/Colab Notebooks/Graph4CTR/data/'
+    BASEPATH = bathpath
 
     def read_item_index_to_entity_id_file():
         file = BASEPATH + DATASET + '/item_index2entity_id_rehashed.txt'

@@ -7,13 +7,13 @@ from graph import getGraph
 from model import Model, train
 from processtor import process
 from torch.utils.data import DataLoader
+from utils import seed_everything
 import logging
 import argparse
 
 LOG_FORMAT = "%(asctime)s %(levelname)s: %(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT, datefmt=DATE_FORMAT)
-BASE = ''
 
 
 def main(args):
@@ -30,7 +30,7 @@ def main(args):
         device = torch.device('cpu')
     logging.info('Use '+str(device)+'.')
     logging.info('data processing...')
-    user, item, all_ = process(dataset=dataset)
+    user, item, all_ = process(dataset=dataset, bathpath=args.path+'data/')
     number = {
         'u': user,
         'i': item,
@@ -50,10 +50,10 @@ def main(args):
     model = Model(u_hidden_size=hidden_size, i_hidden_size=hidden_size, number=number,
                   i_hidden_list=i_hidden_list, hidden_list=hidden_list, args=args, heads=6,
                   dataset=dataset, mode=mode)
-    metrics = ['auc', 'f1','acc']
-    logging.info('training...')
-    train(model=model, data=data, metrics=metrics, graph=graph, epochs=args.epoch,
-          learning_rate=args.learning_rate, weight_decay=args.weight_decay, device=device)
+    metrics = ['auc', 'f1', 'acc', 'precision', 'recall']
+    logging.info('============================Training===============================')
+    train(model=model, data=data, metrics=metrics, graph=graph, device=device, epochs=args.epoch,
+          learning_rate=args.learning_rate, weight_decay=args.weight_decay, path=args.path)
 
 
 if __name__ == '__main__':
@@ -68,7 +68,9 @@ if __name__ == '__main__':
     parser.add_argument('--gpu', type=bool, default=True, help='use gpu.')
     parser.add_argument('--c_in', type=float, default=1., help='C_in.')
     parser.add_argument('--c_out', type=float, default=1., help='C_out.')
+    parser.add_argument('--path', type=str, default='/content/drive/My Drive/Colab Notebooks/Graph4CTR/', help='Path.')
     parser.print_help()
 
     args = parser.parse_args()
+    seed_everything()
     main(args)
